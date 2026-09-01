@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Available Events</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="card wide">
+    <h1>Available Events</h1>
+    <div id="error" class="error" style="display:none"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Event Name</th>
+          <th>Date</th>
+          <th>Location</th>
+          <th>Details</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="eventsBody"></tbody>
+    </table>
+    <div class="logout-row">
+      <a href="#" id="logoutLink">Log Out</a>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    requireAuth();
+
+    document.getElementById("logoutLink").addEventListener("click", (e) => {
+      e.preventDefault();
+      logout();
+    });
+
+    async function loadEvents() {
+      const errorEl = document.getElementById("error");
+      try {
+        const events = await apiFetch("/events");
+        const tbody = document.getElementById("eventsBody");
+        tbody.innerHTML = "";
+
+        events.forEach((ev) => {
+          const tr = document.createElement("tr");
+          const dateStr = new Date(ev.date).toISOString().split("T")[0];
+          tr.innerHTML = `
+            <td>${ev.name}</td>
+            <td>${dateStr}</td>
+            <td>${ev.location}</td>
+            <td>${ev.details || ""}</td>
+            <td><button class="action-btn" data-id="${ev._id}">Book Now</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll("button[data-id]").forEach((btn) => {
+          btn.addEventListener("click", () => bookEvent(btn.dataset.id, btn));
+        });
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = "block";
+      }
+    }
+
+    async function bookEvent(id, btn) {
+      try {
+        await apiFetch(`/events/${id}/book`, { method: "POST" });
+        btn.textContent = "Booked";
+        btn.disabled = true;
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    loadEvents();
+  </script>
+</body>
+</html>

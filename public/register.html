@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Register</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="card">
+    <h1>Register</h1>
+    <div id="error" class="error" style="display:none"></div>
+    <form id="registerForm">
+      <input type="text" id="name" placeholder="Username" required />
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <input type="password" id="confirmPassword" placeholder="Confirm Password" required />
+      <button type="submit">Sign Up</button>
+    </form>
+    <div class="link-row">
+      Already have an account? <a href="login.html">Log In</a>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById("error");
+      errorEl.style.display = "none";
+
+      const name = document.getElementById("name").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
+
+      if (password !== confirmPassword) {
+        errorEl.textContent = "Passwords do not match";
+        errorEl.style.display = "block";
+        return;
+      }
+
+      try {
+        const data = await apiFetch("/auth/register", {
+          method: "POST",
+          body: JSON.stringify({ name, email, password }),
+        });
+        saveAuth(data);
+        window.location.href = "events.html";
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = "block";
+      }
+    });
+  </script>
+</body>
+</html>

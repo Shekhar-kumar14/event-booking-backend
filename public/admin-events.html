@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Event Management</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="card wide">
+    <h1>Event Management</h1>
+    <div id="error" class="error" style="display:none"></div>
+
+    <div class="link-row" style="text-align:right; margin-bottom:12px;">
+      <a href="admin-create-event.html">+ Create New Event</a>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Event Name</th>
+          <th>Date</th>
+          <th>Location</th>
+          <th>View Users</th>
+        </tr>
+      </thead>
+      <tbody id="eventsBody"></tbody>
+    </table>
+
+    <div id="usersSection" style="display:none; margin-top:24px;">
+      <h3 id="usersTitle"></h3>
+      <div id="usersList"></div>
+    </div>
+
+    <div class="logout-row">
+      <a href="#" id="logoutLink">Log Out</a>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    requireAdmin();
+
+    document.getElementById("logoutLink").addEventListener("click", (e) => {
+      e.preventDefault();
+      logout();
+    });
+
+    async function loadEvents() {
+      const errorEl = document.getElementById("error");
+      try {
+        const events = await apiFetch("/events");
+        const tbody = document.getElementById("eventsBody");
+        tbody.innerHTML = "";
+
+        events.forEach((ev) => {
+          const tr = document.createElement("tr");
+          const dateStr = new Date(ev.date).toISOString().split("T")[0];
+          tr.innerHTML = `
+            <td>${ev.name}</td>
+            <td>${dateStr}</td>
+            <td>${ev.location}</td>
+            <td><button class="action-btn" data-id="${ev._id}" data-name="${ev.name}">View Users</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll("button[data-id]").forEach((btn) => {
+          btn.addEventListener("click", () => viewUsers(btn.dataset.id, btn.dataset.name));
+        });
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = "block";
+      }
+    }
+
+    async function viewUsers(id, name) {
+      const errorEl = document.getElementById("error");
+      try {
+        const data = await apiFetch(`/events/${id}/users`);
+        document.getElementById("usersSection").style.display = "block";
+        document.getElementById("usersTitle").textContent = `Users Registered for ${name}:`;
+
+        const listEl = document.getElementById("usersList");
+        listEl.innerHTML = "";
+
+        if (data.users.length === 0) {
+          listEl.innerHTML = `<div class="user-row">No users registered yet</div>`;
+          return;
+        }
+
+        data.users.forEach((u) => {
+          const div = document.createElement("div");
+          div.className = "user-row";
+          div.textContent = `${u.name} (${u.email})`;
+          listEl.appendChild(div);
+        });
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = "block";
+      }
+    }
+
+    loadEvents();
+  </script>
+</body>
+</html>
